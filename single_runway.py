@@ -63,7 +63,39 @@ h_i = [el[5] for el in data]
 print(h_i)
 
 ### Define sets ###
+W = []
+V = []
+U = []
 
+#define set W for which plane i lands definetely before plane j (separation satisfied automaticly)
+for i in range(P):
+    for j in range(P):
+        if i != j:
+            if L_i[i] < E_i[j] and L_i[i] + S_ij[i][j] <= E_i[j]:
+                W.append((i,j))
+
+#define set V for which plane i lands definetely before plane j (separation NOT satisfied automaticly)
+for i in range(P):
+    for j in range(P):
+        if i != j:
+            if L_i[i] < E_i[j] and L_i[i] + S_ij[i][j] > E_i[j]:
+                V.append((i,j))
+
+#define set U for which we are uncertain which plane lands first
+for i in range(P):
+    for j in range(P):
+        if i != j:
+            if E_i[j] <= E_i[i] <= L_i[j]:
+                U.append((i,j))
+            elif E_i[j] <= L_i[i] <= L_i[j]:
+                U.append((i,j))
+            elif E_i[i] <= E_i[j] <= L_i[i]:
+                U.append((i,j))
+            elif E_i[i] <= L_i[j] <= L_i[i]:
+                U.append((i,j))
+print(U)
+print(V)
+print(W)
 
 ### Defining optimization model ###
 model = Model()
