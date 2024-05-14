@@ -1,38 +1,66 @@
 import numpy as np
 import pandas as pd
 from gurobipy import *
+import csv
 import matplotlib.pyplot as plt
 
-# df = pd.read_csv('data/airland1.txt')
-# print(df)
+###SPECIFY DATA HERE###
+data_number = 2
 
-text_file = open("data/airland1.txt", "r")
-lines = text_file.read().split('\n')
-print(lines)
+
+
+###Opening data file and extracting data
+data_save = []
+with open(f'data/airland{data_number}.txt') as file:
+    reader = csv.reader(file, delimiter=' ')
+    i = 0
+    for row in reader:
+        row.pop(0)
+        row.pop(-1)
+        data_temp = [float(i) for i in row]
+        # print(data_temp)
+        #get the number of planes
+        if i == 0:
+            number_of_planes = data_temp[0]
+        #get the data per plane
+        if i != 0:
+            data_save = data_save+data_temp
+            # print('data_save',data_save)
+        i += 1
+
+#split the total data to lists per plane, with first 6 datapoints and then the separation times
+chunk_size = int(number_of_planes+6)
+data = [data_save[i:i + chunk_size] for i in range(0, len(data_save), chunk_size)]
+print('final data matrix',data)
 
 ### Defining all initial settings ###
-do = 1 #placeholder, should be fixed, read from file
 
 #number of planes
-P = do
+P = int(number_of_planes)
 
 #earliest landing time
-E_i = do
-
-#latest landing time
-L_i = do
+E_i = [el[1] for el in data]
+print(E_i)
 
 #target landing time
-T_i = do
+T_i = [el[2] for el in data]
+print(T_i)
+
+#latest landing time
+L_i = [el[3] for el in data]
+print(L_i)
 
 #seperation requirement
-S_ij = do
+S_ij = [el[6:] for el in data]
+print(S_ij)
 
 #penalty cost too early
-g_i = do
+g_i = [el[4] for el in data]
+print(g_i)
 
 #penalty cost too late
-h_i = do
+h_i = [el[5] for el in data]
+print(h_i)
 
 ### Define sets ###
 
@@ -51,20 +79,20 @@ beta = {}
 d = {}
 
 
-for i in range(len(P)):
+for i in range(P):
     x[i] = model.addVar(lb=0,
                         vtype=GRB.CONTINUOUS,
                         name='x[%s]' % (i))
-for i in range(len(P)):
+for i in range(P):
     alpha[i] = model.addVar(lb=0,
                         vtype=GRB.CONTINUOUS,
                         name='alpha[%s]' % (i))
-for i in range(len(P)):
+for i in range(P):
     beta[i] = model.addVar(lb=0,
                         vtype=GRB.CONTINUOUS,
                         name='beta[%s]' % (i))
-for i in range(len(P)):
-    for j in range(len(P)):
+for i in range(P):
+    for j in range(P):
         if j != i: #todo check if this creates the decision variable properly
             d[i,j] = model.addVar(lb=0, ub=1,
                                 vtype=GRB.BINARY,
@@ -88,7 +116,7 @@ obj = LinExpr()
 
 model.setObjective(obj, GRB.MINIMIZE)
 model.update()
-model.write('VRP_example.lp')
+model.write('model.lp')
 model.optimize()
 
 
