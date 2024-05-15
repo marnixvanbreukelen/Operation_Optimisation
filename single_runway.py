@@ -130,7 +130,7 @@ def optimize_single_runway(data_number):
             if j != i:
                 d[i,j] = model.addVar(lb=0, ub=1,
                                     vtype=GRB.BINARY,
-                                    name='d[%s, %s]' % (i,j))
+                                    name='d[%s,%s]' % (i,j))
     model.update()
 
     ### Constraints ###
@@ -195,6 +195,7 @@ def optimize_single_runway(data_number):
 
     #OPTIMIZE MODEL
     model.optimize()
+    return
 
 #RUN MODEL
 ###SPECIFY DATA HERE###
