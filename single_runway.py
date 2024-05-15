@@ -132,23 +132,66 @@ for i in range(P):
 model.update()
 
 ### Constraints ###
+#constraint 1
+for i in range(P):
+    model.addLConstr(x[i], GRB.GREATER_EQUAL, E_i[i],
+                     name='1a')
+    model.addLConstr(x[i], GRB.LESS_EQUAL, L_i[i],
+                     name='1b')
 
+#constraint 2
+for i in range(P):
+    for j in range(P):
+        if j > i:
+            model.addLConstr(d[i,j]+d[j,i], GRB.EQUAL, 1,
+                             name='2')
 
+#constraint 6
+for (i,j) in (W or V): #todo check if this or works
+    model.addLConstr(d[i,j], GRB.EQUAL, 1,
+                     name='6')
 
+#constraint 7
+for (i,j) in V:
+    model.addLConstr(x[j], GRB.GREATER_EQUAL, x[i]+S_ij[i][j],
+                     name='7')
+
+#constraint 12 (M = L+S-E)
+for (i,j) in U:
+    model.addLConstr(x[j], GRB.GREATER_EQUAL, x[i]+S_ij[i][j]*d[i,j]-(L_i[i]-E_i[j])*d[j,i],
+                     name='12')
+
+#constraint 14-18
+for i in range(P):
+    model.addLConstr(alpha[i], GRB.GREATER_EQUAL, T_i[i]-x[i],
+                     name='14')
+    model.addLConstr(alpha[i], GRB.GREATER_EQUAL, 0,
+                     name='15a')
+    model.addLConstr(alpha[i], GRB.LESS_EQUAL, T_i[i] - E_i[i],
+                     name='15b')
+    model.addLConstr(beta[i], GRB.GREATER_EQUAL, x[i] - T_i[i],
+                     name='16')
+    model.addLConstr(beta[i], GRB.GREATER_EQUAL, 0,
+                     name='17a')
+    model.addLConstr(beta[i], GRB.LESS_EQUAL, L_i[i] - T_i[i],
+                     name='17b')
+    model.addLConstr(x[i], GRB.EQUAL, T_i[i]-alpha[i]+beta[i],
+                     name='18')
 model.update()
 
 ### Defining objective ###
 
 obj = LinExpr()
 
-
-
-
+for i in range(P):
+    obj += g_i[i]*alpha[i]+h_i[i]*beta[i]
 
 
 model.setObjective(obj, GRB.MINIMIZE)
 model.update()
 model.write('model.lp')
+
+#OPTIMIZE MODEL
 model.optimize()
 
 
