@@ -174,7 +174,12 @@ def optimize_multiple_runway(data_number, R):
 
     #OPTIMIZE MODEL
     model.optimize()
-    return
+
+    # get solution: is a list of all decision variables ordered x, alpha, beta ,d. z, y
+    solution = []
+    for v in model.getVars():
+        solution.append(v.x)
+    return solution
 #RUN MODEL
 ###SPECIFY DATA HERE###
 data_number = 8

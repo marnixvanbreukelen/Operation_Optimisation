@@ -195,12 +195,16 @@ def optimize_single_runway(data_number):
 
     #OPTIMIZE MODEL
     model.optimize()
-    return
+    #get solution: is a list of all decision variables ordered x, alpha, beta ,d
+    solution = []
+    for v in model.getVars():
+        solution.append(v.x)
+    return solution
 
 #RUN MODEL
 ###SPECIFY DATA HERE###
-data_number = 5
-optimize_single_runway(data_number)
+# data_number = 5
+# optimize_single_runway(data_number)
 
 
 ### Optional post-processing ###
