@@ -5,7 +5,7 @@ import numpy as np
 
 def optimize_multiple_runway(data_number, R):
     #read data
-    P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+    P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
     s_ij = np.zeros((P,P)) #todo check if zeros is the way to approach:: the result is good
     ### Define sets ###
     W = []
@@ -179,9 +179,62 @@ def optimize_multiple_runway(data_number, R):
     solution = []
     for v in model.getVars():
         solution.append(v.x)
-    return solution
-#RUN MODEL
+
+    ### Format solution
+    # Function to parse Gurobi variable names and values
+    def parse_var(var):
+        name = var.varName
+        value = var.x
+        return name, value
+
+    # Initialize the dictionary
+    var_dict = {}
+
+    # Populate the dictionary
+    for var in model.getVars():
+        name, value = parse_var(var)
+        if '[' in name:
+            base_name, indices = name.split('[')
+            indices = indices.rstrip(']').split(',')
+            indices = tuple(map(int, indices))  # Convert indices to tuple of integers
+            if len(indices) == 1:
+                indices = indices[0]  # Unwrap single-element tuple
+            if base_name not in var_dict:
+                var_dict[base_name] = {}
+            var_dict[base_name][indices] = value
+        else:
+            var_dict[name] = value
+
+    # Nested dictionary for variables like y
+    def nested_dict():
+        from collections import defaultdict
+        return defaultdict(nested_dict)
+
+    nested_var_dict = nested_dict()
+
+    for key, value in var_dict.items():
+        if isinstance(value, dict):
+            for indices, val in value.items():
+                if isinstance(indices, tuple):
+                    if len(indices) == 2:
+                        nested_var_dict[key][indices[0]][indices[1]] = val
+                    else:
+                        nested_var_dict[key][indices] = val
+                else:
+                    nested_var_dict[key][indices] = val
+        else:
+            nested_var_dict[key] = value
+
+    # Convert nested defaultdict to regular dict
+    import json
+    final_var_dict = json.loads(json.dumps(nested_var_dict))
+
+    return solution, final_var_dict
+
+###RUN MODEL
 ###SPECIFY DATA HERE###
-data_number = 8
-R = 2
-optimize_multiple_runway(data_number,R)
+data_number = 14
+R = 2   # This is the number of runways
+solution, final_var_dict = optimize_multiple_runway(data_number,R)
+print(solution)
+print(final_var_dict)
