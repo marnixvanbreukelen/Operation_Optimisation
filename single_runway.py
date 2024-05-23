@@ -58,7 +58,7 @@ def read_data(data_number):
     #penalty cost too late
     h_i = [el[5] for el in data]
     print(h_i)
-    return P, E_i, T_i, L_i, S_ij, g_i,h_i
+    return P, E_i, T_i, L_i, S_ij, g_i, h_i
 
 
 

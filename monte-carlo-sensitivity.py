@@ -344,7 +344,7 @@ def vary_separation_time_sens(S_ij, random_range):
             else:
                 s_adj = s - random_separation_deviation
         else:
-            s_adj = 99999 #
+            s_adj = 99999
         S_ij_adj.append(s_adj)
 
     return S_ij_adj
