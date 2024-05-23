@@ -33,7 +33,7 @@ import seaborn as sns
 
 
 
-data_number = 3
+data_number = 5
 P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 # convert to int
 S_ij = [[int(s) for s in s_ij] for s_ij in S_ij]
@@ -111,7 +111,7 @@ def plot_varied_separation_time():
     plt.tight_layout()  # Adjust layout to accommodate x-axis labels
     plt.show()
 
-# plot_varied_separation_time()
+plot_varied_separation_time()
 
 ######### Penalty costs:
 # Options:
@@ -261,6 +261,8 @@ def plot_preferred_ac_penalties():
     plt.grid(True)
     plt.tight_layout()  # Adjust layout to accommodate x-axis labels
     plt.show()
+
+plot_preferred_ac_penalties()
 
 #########  Landing times
 def vary_landing_times(E_i, L_i, dev_earlier, dev_later):

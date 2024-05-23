@@ -12,7 +12,8 @@ def read_data(data_number):
         i = 0
         for row in reader:
             row.pop(0)
-            row.pop(-1)
+            if row[-1] == "":
+                row.pop(-1)
             data_temp = [float(i) for i in row]
             # print(data_temp)
             #get the number of planes
