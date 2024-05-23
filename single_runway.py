@@ -60,10 +60,8 @@ def read_data(data_number):
     return P, E_i, T_i, L_i, S_ij, g_i, h_i
 
 
-def optimize_single_runway(data_number):
-    #read data
-    P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 
+def optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number):
     ### Define sets ###
     W = []
     V = []
@@ -191,7 +189,7 @@ def optimize_single_runway(data_number):
 
     model.setObjective(obj, GRB.MINIMIZE)
     model.update()
-    model.write(f'model{data_number}.lp')
+    model.write(f'model_files/model{data_number}.lp')
 
     #OPTIMIZE MODEL
     model.optimize()
@@ -204,7 +202,9 @@ def optimize_single_runway(data_number):
 #RUN MODEL
 ###SPECIFY DATA HERE###
 # data_number = 5
-# optimize_single_runway(data_number)
+# # read data
+# P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+# print(optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i))
 
 
 ### Optional post-processing ###
