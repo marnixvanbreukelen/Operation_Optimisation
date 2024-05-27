@@ -197,7 +197,11 @@ def optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number):
     #get solution: is a list of all decision variables ordered x, alpha, beta ,d
     solution = []
     for v in model.getVars():
-        solution.append(v.x)
+        try:
+            solution.append(v.x)
+        except AttributeError:
+            solution = 100*np.ones(4*P)
+
     return solution
 
 #RUN MODEL
