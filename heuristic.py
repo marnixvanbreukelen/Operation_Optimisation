@@ -67,7 +67,7 @@ for j in range(P):
         B.append(B_r)
     ind = B.index(min(B))
     A[ind].append(j)
-    x_j = min(B)
+    x_j = min(B) # todo find out what this does and why x_j
 
 
 
