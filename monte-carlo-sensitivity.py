@@ -3,47 +3,19 @@ import random
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-# # number of planes
-# P = int(number_of_planes)
-#
-# # earliest landing time
-# E_i = [el[1] for el in data]
-# print(E_i)
-#
-# # target landing time
-# T_i = [el[2] for el in data]
-# print(T_i)
-#
-# # latest landing time
-# L_i = [el[3] for el in data]
-# print(L_i)
-#
-# # penalty cost too early
-# g_i = [el[4] for el in data]
-# print(g_i)
-#
-# # penalty cost too late
-# h_i = [el[5] for el in data]
-# print(h_i)
-#
-# # seperation requirement
-# S_ij = [el[6:] for el in data]
-# print(S_ij)
+import copy
 
 
-
+# Loading Data for the rest of the analysis
 data_number = 5
 P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 # convert to int
 S_ij = [[int(s) for s in s_ij] for s_ij in S_ij]
 
-sens_steps = 5
-
-
-
-
 
 """Sensitivity"""
+# How many sensitivity steps 
+sens_steps = 5
 ######### Separation time
 def vary_separation_time_sens(S_ij, set_separation):
     return [[set_separation if s != 99999 else s for s in s_ij] for s_ij in S_ij]
@@ -327,10 +299,10 @@ def plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i):
     plt.show()
 
 """"PLOT ALL"""
-# plot_preferred_ac_penalties()
-# plot_varying_cost_panalties()
-# plot_varied_separation_time()
-# plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i)
+plot_preferred_ac_penalties()
+plot_varying_cost_panalties()
+plot_varied_separation_time()
+plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i)
 
 # Number of aircraft in a time window
 
@@ -465,7 +437,7 @@ def plot_mc_solutions(mc_solutions, T_i_variations):
 
 
 mc_solutions, E_i_variations, T_i_variations, L_i_variations, S_ij_variations, g_i_variations, h_i_variations = run_monte_carlo_variations(nr_mc_variations)
-# plot_mc_solutions(mc_solutions, T_i_variations)
+plot_mc_solutions(mc_solutions, T_i_variations)
 
 """Adding rows of planes"""
 # Genetic algorithm: random mutations in children based on parent
@@ -476,14 +448,14 @@ def add_planes(planes_to_add,
                range_g,
                range_h,
                range_S,
-               P, E_i, T_i, L_i, S_ij, g_i, h_i):
+               P_var, E_i_var, T_i_var, L_i_var, S_ij_var, g_i_var, h_i_var):
     print(planes_to_add)
     for _ in range(planes_to_add):
         #s select a random existing plane
-        i = random.randint(0,P-1)
+        i = random.randint(0,P_var-1)
         # Parameters to be permuted:
-        # E_i earliest landing time
-        E_p = E_i[i] + random.sample(E_range, 1)[0]
+        # E_i earliest landing time, cannot be before 0
+        E_p = max(0, E_i_var[i] + random.sample(E_range, 1)[0])
 
         # T_i target landing time
         T_p = E_p + random.sample(T_range, 1)[0]
@@ -502,11 +474,11 @@ def add_planes(planes_to_add,
 
         # using a given range of separation times
         S_pj = []
-        for j in range(P):
+        for j in range(P_var):
             # Add a separation time for plane p to other planes
             S_pj.append(random.sample(range_S, 1)[0])
             # Add a separation time for other plans j to plane p
-            S_ij[j].append(random.sample(range_S, 1)[0])
+            S_ij_var[j].append(random.sample(range_S, 1)[0])
 
         S_pj.append(99999)
 
@@ -514,15 +486,15 @@ def add_planes(planes_to_add,
         #for s in S_ij[i]:
 
         # Update all lists
-        P += 1
-        E_i.append(E_p)
-        T_i.append(T_p)
-        L_i.append(L_p)
-        S_ij.append(S_pj)
-        g_i.append(g_p)
-        h_i.append(h_p)
+        P_var += 1
+        E_i_var.append(E_p)
+        T_i_var.append(T_p)
+        L_i_var.append(L_p)
+        S_ij_var.append(S_pj)
+        g_i_var.append(g_p)
+        h_i_var.append(h_p)
 
-    return E_i, T_i, L_i, S_ij, g_i, h_i
+    return E_i_var, T_i_var, L_i_var, S_ij_var, g_i_var, h_i_var
 
 
 def add_ac_to_mc(nr_mc_variations,
@@ -533,43 +505,43 @@ def add_ac_to_mc(nr_mc_variations,
                 range_g,
                 range_h,
                 range_S,
-                P,
-                E_i_variations, T_i_variations, L_i_variations,
-                S_ij_variations, g_i_variations, h_i_variations):
+                P_add,
+                E_i_vars, T_i_vars, L_i_vars,
+                S_ij_vars, g_i_vars, h_i_vars):
 
     # Initialising lists to store variations with added planes
-    E_i_variations_ac_added = []
-    T_i_variations_ac_added = []
-    L_i_variations_ac_added = []
-    S_ij_variations_ac_added = []
-    g_i_variations_ac_added = []
-    h_i_variations_ac_added = []
+    E_i_vars_ac_add = []
+    T_i_vars_ac_add = []
+    L_i_vars_ac_add = []
+    S_ij_vars_ac_add = []
+    g_i_vars_ac_add = []
+    h_i_vars_ac_add = []
 
     for variation in range(nr_mc_variations):
-        E_i = E_i_variations[variation]
-        T_i = T_i_variations[variation]
-        L_i = L_i_variations[variation]
-        S_ij = S_ij_variations[variation]
-        g_i = g_i_variations[variation]
-        h_i = h_i_variations[variation]
+        E_i_var = E_i_vars[variation]
+        T_i_var = T_i_vars[variation]
+        L_i_var = L_i_vars[variation]
+        S_ij_var = S_ij_vars[variation]
+        g_i_var = g_i_vars[variation]
+        h_i_var = h_i_vars[variation]
 
         # Add planes based on the parameters
         E_i_adj, T_i_adj, L_i_adj, S_ij_adj, g_i_adj, h_i_adj = add_planes(
             planes_to_add, E_range, T_range, L_range, range_g, range_h, range_S,
-            P, E_i, T_i, L_i, S_ij, g_i, h_i
+            P_add, E_i_var, T_i_var, L_i_var, S_ij_var, g_i_var, h_i_var
         )
 
         # Append variation with planes added
-        E_i_variations_ac_added.append(E_i_adj)
-        T_i_variations_ac_added.append(T_i_adj)
-        L_i_variations_ac_added.append(L_i_adj)
-        S_ij_variations_ac_added.append(S_ij_adj)
-        g_i_variations_ac_added.append(g_i_adj)
-        h_i_variations_ac_added.append(h_i_adj)
+        E_i_vars_ac_add.append(E_i_adj)
+        T_i_vars_ac_add.append(T_i_adj)
+        L_i_vars_ac_add.append(L_i_adj)
+        S_ij_vars_ac_add.append(S_ij_adj)
+        g_i_vars_ac_add.append(g_i_adj)
+        h_i_vars_ac_add.append(h_i_adj)
 
-    return (E_i_variations_ac_added, T_i_variations_ac_added,
-            L_i_variations_ac_added, S_ij_variations_ac_added,
-            g_i_variations_ac_added, h_i_variations_ac_added)
+    return (E_i_vars_ac_add, T_i_vars_ac_add,
+            L_i_vars_ac_add, S_ij_vars_ac_add,
+            g_i_vars_ac_add, h_i_vars_ac_add)
 
 
 # dict to save for added planes
@@ -580,13 +552,13 @@ all_S_ij_variations_ac_added = {}
 all_g_i_variations_ac_added = {}
 all_h_i_variations_ac_added = {}
 
-# save original variations
-all_E_i_variations_ac_added[P] = E_i_variations
-all_T_i_variations_ac_added[P] = T_i_variations
-all_L_i_variations_ac_added[P] = L_i_variations
-all_S_ij_variations_ac_added[P] = S_ij_variations
-all_g_i_variations_ac_added[P] = g_i_variations
-all_h_i_variations_ac_added[P] = h_i_variations
+# original variations
+all_E_i_variations_ac_added[P] = copy.deepcopy(E_i_variations)
+all_T_i_variations_ac_added[P] = copy.deepcopy(T_i_variations)
+all_L_i_variations_ac_added[P] = copy.deepcopy(L_i_variations)
+all_S_ij_variations_ac_added[P] = copy.deepcopy(S_ij_variations)
+all_g_i_variations_ac_added[P] = copy.deepcopy(g_i_variations)
+all_h_i_variations_ac_added[P] = copy.deepcopy(h_i_variations)
 
 planes_to_add_list = [5, 10, 15, 20]
 for planes_to_add in planes_to_add_list:
@@ -600,9 +572,15 @@ for planes_to_add in planes_to_add_list:
 all_mc_solutions_ac_added = {}
 all_mc_solutions_ac_added[P] = mc_solutions
 
-for planes_to_add in [5,10,15,20]:
-    # Adding 5 AC, 10 AC, but renew everytime (so not 5 and then another 5), to maximise randomness
-    # Can als vary the other variations
+for planes_to_add in planes_to_add_list:
+    # Create deep copies of the original variations for each iteration
+    E_i_variations_copy = copy.deepcopy(E_i_variations)
+    T_i_variations_copy = copy.deepcopy(T_i_variations)
+    L_i_variations_copy = copy.deepcopy(L_i_variations)
+    S_ij_variations_copy = copy.deepcopy(S_ij_variations)
+    g_i_variations_copy = copy.deepcopy(g_i_variations)
+    h_i_variations_copy = copy.deepcopy(h_i_variations)
+
     E_i_variations_ac_added, T_i_variations_ac_added, \
     L_i_variations_ac_added, S_ij_variations_ac_added, \
     g_i_variations_ac_added, h_i_variations_ac_added = add_ac_to_mc(nr_mc_variations,
@@ -614,8 +592,8 @@ for planes_to_add in [5,10,15,20]:
                                                                     range_h,
                                                                     range_S,
                                                                     P,
-                                                                    E_i_variations, T_i_variations, L_i_variations,
-                                                                    S_ij_variations, g_i_variations, h_i_variations)
+                                                                    E_i_variations_copy, T_i_variations_copy, L_i_variations_copy,
+                                                                    S_ij_variations_copy, g_i_variations_copy, h_i_variations_copy)
 
     all_E_i_variations_ac_added[P + planes_to_add] = E_i_variations_ac_added
     all_T_i_variations_ac_added[P + planes_to_add] = T_i_variations_ac_added
@@ -643,7 +621,7 @@ for planes_to_add in [5,10,15,20]:
 
 def plot_average_deviation(planes_to_add_list, all_mc_solutions_ac_added, all_T_i_variations_ac_added):
     avg_devs_per_planes_added = {}
-
+    planes_to_add_list = [0] + planes_to_add_list
     for planes_to_add in planes_to_add_list:
         mc_solutions_ac_added = all_mc_solutions_ac_added[P + planes_to_add]
         T_i_variations_ac_added = all_T_i_variations_ac_added[P + planes_to_add]
@@ -669,8 +647,9 @@ def plot_average_deviation(planes_to_add_list, all_mc_solutions_ac_added, all_T_
 
     plt.figure(figsize=(12, 6))
     plt.boxplot([avg_devs_per_planes_added[planes_to_add] for planes_to_add in planes_to_add_list], positions=planes_to_add_list, widths=2)
-    plt.title('Boxplot of Average Deviations per Number of Planes Added')
-    plt.xlabel('Number of Planes Added')
+    plt.title(f'Boxplot of Average Deviations per Number of Planes Added, {nr_mc_variations} Monte-Carlo Variations')
+    plt.xticks(planes_to_add_list, [P + planes_to_add for planes_to_add in planes_to_add_list])
+    plt.xlabel('Number of Planes')
     plt.ylabel('Average Time Deviation (%)')
     plt.show()
 
