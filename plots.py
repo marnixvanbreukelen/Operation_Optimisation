@@ -4,7 +4,7 @@ from single_runway import *
 from multiple_runway import *
 
 #get data
-data_number = 8
+data_number = 4
 R = 2
 P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 if R == 1:
@@ -14,11 +14,11 @@ else:
 #make plot
 #https://matplotlib.org/stable/api/markers_api.html
 plt.scatter(E_i,np.arange(P),color='red',marker='|',label='E')
-plt.scatter(T_i,np.arange(P),color='blue',marker='|',label='T')
+plt.scatter(T_i,np.arange(P),color='blue',marker='o',label='T')
 plt.scatter(L_i,np.arange(P),color='green',marker='|',label='L')
 plt.scatter(solution[:P],np.arange(P),color='orange',marker='x',label='O')
 for i in range(P):
-    plt.plot((E_i[i],L_i[i]),(i,i),color='black',linestyle='--')
+    plt.plot((E_i[i],L_i[i]),(i,i),color='black',linestyle='dotted')
 
 #format plot
 plt.legend()

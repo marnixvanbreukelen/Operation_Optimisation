@@ -233,8 +233,8 @@ def optimize_multiple_runway(data_number, R):
 
 ###RUN MODEL
 ###SPECIFY DATA HERE###
-data_number = 14
-R = 2   # This is the number of runways
-solution, final_var_dict = optimize_multiple_runway(data_number,R)
-print(solution)
-print(final_var_dict)
+# data_number = 14
+# R = 2   # This is the number of runways
+# solution, final_var_dict = optimize_multiple_runway(data_number,R)
+# print(solution)
+# print(final_var_dict)
