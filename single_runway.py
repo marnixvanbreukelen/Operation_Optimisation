@@ -28,7 +28,7 @@ def read_data(data_number):
     #split the total data to lists per plane, with first 6 datapoints and then the separation times
     chunk_size = int(number_of_planes+6)
     data = [data_save[i:i + chunk_size] for i in range(0, len(data_save), chunk_size)]
-    print('final data matrix',data)
+    # print('final data matrix',data)
 
     ### Defining all initial settings ###
 
@@ -37,27 +37,28 @@ def read_data(data_number):
 
     #earliest landing time
     E_i = [el[1] for el in data]
-    print(E_i)
+    # print(E_i)
 
     #target landing time
     T_i = [el[2] for el in data]
-    print(T_i)
+    # print(T_i)
 
     #latest landing time
     L_i = [el[3] for el in data]
-    print(L_i)
+    # print(L_i)
 
     #seperation requirement
     S_ij = [el[6:] for el in data]
-    print(S_ij)
+    # print(S_ij)
 
     #penalty cost too early
     g_i = [el[4] for el in data]
-    print(g_i)
+    # print(g_i)
 
     #penalty cost too late
     h_i = [el[5] for el in data]
-    print(h_i)
+    # print(h_i)
+    print("Data loaded succesfully")
     return P, E_i, T_i, L_i, S_ij, g_i, h_i
 
 
@@ -190,7 +191,9 @@ def optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number):
 
     model.setObjective(obj, GRB.MINIMIZE)
     model.update()
-    model.write(f'model_files/model{data_number}.lp')
+    # model.write(f'model_files/model{data_number}.lp')
+    # Set the time limit to 60 seconds
+    model.setParam('TimeLimit', 1)
 
     #OPTIMIZE MODEL
     model.optimize()
@@ -254,10 +257,10 @@ def optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number):
 
 #RUN MODEL
 ###SPECIFY DATA HERE###
-data_number = 1
+# data_number = 1
 # read data
-P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+# P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 # print(optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i))
-solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number)
-print(solution, final_var_dict)
+# solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number)
+# print(solution, final_var_dict)
 ### Optional post-processing ###

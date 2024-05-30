@@ -3,9 +3,7 @@ import csv
 from single_runway import read_data
 import numpy as np
 
-def optimize_multiple_runway(data_number, R):
-    #read data
-    P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+def optimize_multiple_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, R):
     s_ij = np.zeros((P,P)) #todo check if zeros is the way to approach:: the result is good
     ### Define sets ###
     W = []
@@ -38,9 +36,9 @@ def optimize_multiple_runway(data_number, R):
                     U.append((i,j))
                 elif E_i[i] <= L_i[j] <= L_i[i]:
                     U.append((i,j))
-    print(U)
-    print(V)
-    print(W)
+    # print(U)
+    # print(V)
+    # print(W)
 
     ### Defining optimization model ###
     model = Model()
@@ -170,7 +168,8 @@ def optimize_multiple_runway(data_number, R):
 
     model.setObjective(obj, GRB.MINIMIZE)
     model.update()
-    model.write(f'model{data_number}.lp')
+    # model.write(f'model{data_number}.lp')
+    model.setParam('TimeLimit', 1)
 
     #OPTIMIZE MODEL
     model.optimize()
@@ -235,6 +234,8 @@ def optimize_multiple_runway(data_number, R):
 ###SPECIFY DATA HERE###
 # data_number = 14
 # R = 2   # This is the number of runways
-# solution, final_var_dict = optimize_multiple_runway(data_number,R)
+#read data
+# P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+# solution, final_var_dict = optimize_multiple_runway(P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i, R)
 # print(solution)
 # print(final_var_dict)

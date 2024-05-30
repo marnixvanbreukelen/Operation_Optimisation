@@ -1,4 +1,5 @@
 from single_runway import read_data, optimize_single_runway
+from multiple_runway import optimize_multiple_runway
 import random
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,9 +12,11 @@ data_number = 5
 P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 # convert to int
 S_ij = [[int(s) for s in s_ij] for s_ij in S_ij]
-opt = "single_runway" # or multi_runway # or heuristic
+opt = "multi_runway" # or multi_runway # or heuristic
 
 """Sensitivity"""
+if opt == "multi_runway":
+    R = 2
 # How many sensitivity steps 
 sens_steps = 5
 ######### Separation time
@@ -41,12 +44,17 @@ def plot_varied_separation_time():
     for index, S_ij_sens in enumerate(S_ij_sens_list):
         # solution is a list of all decision variables ordered x, alpha, beta ,d
         # every one of them is length P
-        solution = optimize_single_runway(P, E_i, T_i, L_i, S_ij_sens, g_i, h_i,
-                                          str(data_number) + "_var_sep_" + str(index))
-        solutions.append(solution)
+        if opt == "single_runway":
+            solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij_sens, g_i, h_i,
+                                              str(data_number) + "_var_sep_" + str(index))
+            solutions.append(final_var_dict)
+        if opt == "multi_runway":
+            solution, final_var_dict = optimize_multiple_runway(P, E_i, T_i, L_i, S_ij_sens, g_i, h_i,
+                                             R)
+            solutions.append(final_var_dict)
 
-    alpha_lists = [solution[P:2*P] for solution in solutions]
-    beta_lists = [solution[2*P:3*P] for solution in solutions]
+    alpha_lists = [[alpha for alpha in sol_dict["alpha"].values()] for sol_dict in mc_solutions]
+    beta_lists = [[beta for beta in sol_dict["beta"].values()] for sol_dict in mc_solutions]
 
     percentual_deviation = []
     for alpha_list, beta_list in zip(alpha_lists, beta_lists):
@@ -122,10 +130,17 @@ def plot_varying_cost_panalties():
         h_i_sens = h_i_sens_list[index]
         # solution is a list of all decision variables ordered x, alpha, beta ,d
         # every one of them is length P
-        solution = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,
-                                          str(data_number) + "_var_cost_" + str(index)
-                                          )
-        solutions.append(solution)
+        if opt == "single_runway":
+            solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,
+                                              str(data_number) + "_var_cost_" + str(index)
+                                              )
+            solutions.append(final_var_dict)
+        if opt == "multi_runway":
+            solution, final_var_dict = optimize_multiple_runway(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,
+                                                              R
+                                                              )
+            solutions.append(final_var_dict)
+
 
     alpha_list = [solution[P:2*P] for solution in solutions]
     beta_list = [solution[2*P:3*P] for solution in solutions]
@@ -179,13 +194,22 @@ def plot_preferred_ac_penalties():
     solutions = []
     for index, g_i_sens in enumerate(g_i_sens_list):
         h_i_sens = h_i_sens_list[index]
-        solution = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,
-                                          str(data_number) + "_pref_pen_" + str(index))
-        solutions.append(solution)
+
+        if opt == "single_runway":
+            solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,
+                                              str(data_number) + "_var_cost_" + str(index)
+                                              )
+            solutions.append(final_var_dict)
+
+        if opt == "multi_runway":
+            solution, final_var_dict = optimize_multiple_runway(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,
+                                                              R
+                                                              )
+            solutions.append(final_var_dict)
 
     # alpha and beta deviations and categorising them into preferred and non-preferred groups
-    alpha_lists = [solution[P:2*P] for solution in solutions]
-    beta_lists = [solution[2*P:3*P] for solution in solutions]
+    alpha_lists = [[alpha for alpha in sol_dict["alpha"].values()] for sol_dict in mc_solutions]
+    beta_lists = [[beta for beta in sol_dict["beta"].values()] for sol_dict in mc_solutions]
 
     # alpha_lists_pref = []
     # alpha_lists_non_pref = []
@@ -266,9 +290,17 @@ def plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i):
     # Optimize for different combinations of E_i_sens and L_i_sens
     for index, E_i_sens in enumerate(E_i_sens_list):
         L_i_sens = L_i_sens_list[index]
-        solution = optimize_single_runway(P, E_i_sens, T_i, L_i_sens, S_ij, g_i, h_i,
-                                          str(data_number) + "_var_landing_" + str(index))
-        solutions.append(solution)
+
+        if opt == "single_runway":
+            solution, final_var_dict = optimize_single_runway(P, E_i_sens, T_i, L_i_sens, S_ij, g_i, h_i,
+                                                              str(data_number) + "_var_landing_" + str(index))
+            solutions.append(final_var_dict)
+
+        if opt == "multi_runway":
+            solution, final_var_dict = optimize_multiple_runway(P, E_i_sens, T_i, L_i_sens, S_ij, g_i, h_i,
+                                                                R
+                                                                )
+            solutions.append(final_var_dict)
 
     # Extract alpha and beta values from solutions
     alpha_list = [solution[P:2*P] for solution in solutions]
@@ -311,10 +343,6 @@ def plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i):
 ##############################################################################################################################################
 
 """Monte-carlo"""
-# can use random.randint if use a range
-# can use random.sample if using a list
-
-
 def vary_separation_time_sens(S_ij, range_S):
     S_ij_adj = []
     for index, s in enumerate(S_ij):
@@ -337,7 +365,7 @@ def data_permutation(E_range, T_range, L_range, range_g, range_h, range_S,
 
     # go through every row for every plane
     for i in range(P):
-        E_i_adj[i] = min(E_i[i] + random.sample(E_range, 1)[0], 0)
+        E_i_adj[i] = max(E_i[i] + random.sample(E_range, 1)[0], 0)
         T_i_adj[i] = E_i_adj[i] + random.sample(T_range, 1)[0]
         L_i_adj[i] = T_i_adj[i] + random.sample(L_range, 1)[0]
 
@@ -371,7 +399,9 @@ nr_mc_variations = 10
 mc_solutions = []
 
 
-def run_monte_carlo_variations(nr_mc_variations):
+def run_monte_carlo_variations(nr_mc_variations,
+                               S_ij_variations, E_i_variations, T_i_variations,
+                               L_i_variations, g_i_variations, h_i_variations, R):
     for _ in range(nr_mc_variations):
         # permutating data
         E_i_adj, T_i_adj, L_i_adj, S_ij_adj, g_i_adj, h_i_adj = data_permutation(
@@ -387,11 +417,11 @@ def run_monte_carlo_variations(nr_mc_variations):
         # monte_carlo_runs
         if opt == "single_runway":
             try:
-                solution = optimize_single_runway(
+                solution, final_var_dict = optimize_single_runway(
                     P, E_i_adj, T_i_adj, L_i_adj, S_ij_adj, g_i_adj, h_i_adj,
                     str(data_number) + "_monte_carlo_" + str(_)
                 )  # TODO let's not write results to file
-                mc_solutions.append(solution)
+                mc_solutions.append(final_var_dict)
                 # append monte-carlo variations
                 E_i_variations.append(E_i_adj)
                 T_i_variations.append(T_i_adj)
@@ -401,14 +431,49 @@ def run_monte_carlo_variations(nr_mc_variations):
                 h_i_variations.append(h_i_adj)
             except Exception as e:
                 print(f"Optimization failed for iteration {_}: {e}")
+
+        if opt == "multi_runway":
+            try:
+                solution, final_var_dict = optimize_multiple_runway(
+                    P, E_i_adj, T_i_adj, L_i_adj, S_ij_adj, g_i_adj, h_i_adj, R
+                )  # TODO let's not write results to file
+                mc_solutions.append(final_var_dict)
+                # append monte-carlo variations
+                E_i_variations.append(E_i_adj)
+                T_i_variations.append(T_i_adj)
+                L_i_variations.append(L_i_adj)
+                S_ij_variations.append(S_ij_adj)
+                g_i_variations.append(g_i_adj)
+                h_i_variations.append(h_i_adj)
+            except Exception as e:
+                print(f"Optimization failed for iteration {_}: {e}")
+
+        if opt == "heuristic":
+            try:
+                solution, final_var_dict = optimize_heuristic_runway(
+                    P, E_i_adj, T_i_adj, L_i_adj, S_ij_adj, g_i_adj, h_i_adj,
+                    str(data_number) + "_monte_carlo_" + str(_)
+                )  # TODO let's not write results to file
+                mc_solutions.append(final_var_dict)
+                # append monte-carlo variations
+                E_i_variations.append(E_i_adj)
+                T_i_variations.append(T_i_adj)
+                L_i_variations.append(L_i_adj)
+                S_ij_variations.append(S_ij_adj)
+                g_i_variations.append(g_i_adj)
+                h_i_variations.append(h_i_adj)
+            except Exception as e:
+                print(f"Optimization failed for iteration {_}: {e}")
+
     return (mc_solutions,
            E_i_variations, T_i_variations, L_i_variations,
            S_ij_variations, g_i_variations, h_i_variations)
 
-
 def plot_mc_solutions(mc_solutions, T_i_variations):
-    alpha_lists = [solution[P:2*P] for solution in mc_solutions]
-    beta_lists = [solution[2*P:3*P] for solution in mc_solutions]
+    alpha_lists = [[alpha for alpha in sol_dict["alpha"].values()] for sol_dict in mc_solutions]
+    beta_lists = [[beta for beta in sol_dict["beta"].values()] for sol_dict in mc_solutions]
+    # alpha_lists = [solution[P:2*P] for solution in mc_solutions]
+    # beta_lists = [solution[2*P:3*P] for solution in mc_solutions]
     percent_devs = []
     for variation, alpha_list in enumerate(alpha_lists):
         beta_list = beta_lists[variation]
@@ -436,10 +501,88 @@ def plot_mc_solutions(mc_solutions, T_i_variations):
     plt.show()
 
 
-mc_solutions, E_i_variations, T_i_variations, L_i_variations, S_ij_variations, g_i_variations, h_i_variations = run_monte_carlo_variations(nr_mc_variations)
+mc_solutions, E_i_variations, T_i_variations, L_i_variations, \
+S_ij_variations, g_i_variations, h_i_variations = run_monte_carlo_variations(nr_mc_variations, \
+                                S_ij_variations, E_i_variations, T_i_variations,
+                               L_i_variations, g_i_variations, h_i_variations, R)
 plot_mc_solutions(mc_solutions, T_i_variations)
 
+
+"""Multiple Runways Changing number of runways"""
+# Can play with this
+if opt == "multi_runway":
+    R = 1
+    mc_solutions, E_i_variations, T_i_variations, L_i_variations, \
+    S_ij_variations, g_i_variations, h_i_variations = run_monte_carlo_variations(nr_mc_variations, \
+                                    S_ij_variations, E_i_variations, T_i_variations,
+                                   L_i_variations, g_i_variations, h_i_variations, R)
+
+all_mc_solutions_runways = {}
+all_mc_solutions_runways[1] = mc_solutions
+runway_list = [2, 3, 4]
+
+for nr_runways in runway_list:
+    # optimisation with added planes
+    mc_solutions_runways = []
+    for variation in range(nr_mc_variations):
+        if opt == "multi_runway":
+            try:
+                solution, final_var_dict = optimize_multiple_runway(
+                    P, E_i_variations[variation], T_i_variations[variation],
+                    L_i_variations[variation], S_ij_variations[variation],
+                    g_i_variations[variation], h_i_variations[variation],
+                    nr_runways
+                )
+                mc_solutions_runways.append(final_var_dict)
+            except Exception as e:
+                print(f"Optimization failed for iteration {variation} with {nr_runways} planes added: {e}")
+
+    all_mc_solutions_runways[nr_runways] = mc_solutions_runways
+
+
+def plot_average_deviation_runways(runway_list, all_mc_solutions_runways, T_i_variations, P):
+    avg_devs_per_runway_added = {}
+    runway_list = [1] + runway_list
+    for runway in runway_list:
+        mc_solutions_runways = all_mc_solutions_runways[runway]
+
+        alpha_lists = [[alpha for alpha in sol_dict["alpha"].values()] for sol_dict in mc_solutions_runways]
+        beta_lists = [[beta for beta in sol_dict["beta"].values()] for sol_dict in mc_solutions_runways]
+        avg_devs = []
+
+        for variation, alpha_list in enumerate(alpha_lists):
+            beta_list = beta_lists[variation]
+            T_i = T_i_variations[variation]
+            total_dev = 0
+
+            for i in range(P):
+                deviation = alpha_list[i] + beta_list[i]
+                percent_deviation = 100 * round(deviation / T_i[i], 2) if T_i[i] != 0 else 0
+                total_dev += percent_deviation
+
+            avg_dev = total_dev / (P)
+            avg_devs.append(avg_dev)
+
+        avg_devs_per_runway_added[runway] = avg_devs
+
+    plt.figure(figsize=(12, 6))
+    plt.boxplot([avg_devs_per_runway_added[runway] for runway in runway_list], positions=runway_list)
+    plt.title(f'Boxplot of Average Deviations per Number of Runways, {nr_mc_variations} Monte-Carlo Variations')
+    plt.xlabel('Number of Runways')
+    plt.ylabel('Average Time Deviation (%)')
+    plt.show()
+
+plot_average_deviation_runways(runway_list, all_mc_solutions_runways, T_i_variations, P)
+
 """Adding rows of planes"""
+# Can play with this
+if opt == "multi_runway":
+    R = 2
+    mc_solutions, E_i_variations, T_i_variations, L_i_variations, \
+    S_ij_variations, g_i_variations, h_i_variations = run_monte_carlo_variations(nr_mc_variations, \
+                                    S_ij_variations, E_i_variations, T_i_variations,
+                                   L_i_variations, g_i_variations, h_i_variations, R)
+
 # Genetic algorithm: random mutations in children based on parent
 def add_planes(planes_to_add,
                E_range,
@@ -553,12 +696,12 @@ all_g_i_variations_ac_added = {}
 all_h_i_variations_ac_added = {}
 
 # original variations
-all_E_i_variations_ac_added[P] = copy.deepcopy(E_i_variations)
-all_T_i_variations_ac_added[P] = copy.deepcopy(T_i_variations)
-all_L_i_variations_ac_added[P] = copy.deepcopy(L_i_variations)
-all_S_ij_variations_ac_added[P] = copy.deepcopy(S_ij_variations)
-all_g_i_variations_ac_added[P] = copy.deepcopy(g_i_variations)
-all_h_i_variations_ac_added[P] = copy.deepcopy(h_i_variations)
+all_E_i_variations_ac_added[1] = copy.deepcopy(E_i_variations)
+all_T_i_variations_ac_added[1] = copy.deepcopy(T_i_variations)
+all_L_i_variations_ac_added[1] = copy.deepcopy(L_i_variations)
+all_S_ij_variations_ac_added[1] = copy.deepcopy(S_ij_variations)
+all_g_i_variations_ac_added[1] = copy.deepcopy(g_i_variations)
+all_h_i_variations_ac_added[1] = copy.deepcopy(h_i_variations)
 
 planes_to_add_list = [5, 10, 15, 20]
 for planes_to_add in planes_to_add_list:
@@ -607,13 +750,37 @@ for planes_to_add in planes_to_add_list:
     for variation in range(nr_mc_variations):
         if opt == "single_runway":
             try:
-                solution = optimize_single_runway(
+                solution, final_var_dict = optimize_single_runway(
                     P + planes_to_add, E_i_variations_ac_added[variation], T_i_variations_ac_added[variation],
                     L_i_variations_ac_added[variation], S_ij_variations_ac_added[variation],
                     g_i_variations_ac_added[variation], h_i_variations_ac_added[variation],
                     str(data_number) + "_monte_carlo_" + str(variation)
                 )
-                mc_solutions_ac_added.append(solution)
+                mc_solutions_ac_added.append(final_var_dict)
+            except Exception as e:
+                print(f"Optimization failed for iteration {variation} with {planes_to_add} planes added: {e}")
+
+        if opt == "multi_runway":
+            try:
+                solution, final_var_dict = optimize_multiple_runway(
+                    P + planes_to_add, E_i_variations_ac_added[variation], T_i_variations_ac_added[variation],
+                    L_i_variations_ac_added[variation], S_ij_variations_ac_added[variation],
+                    g_i_variations_ac_added[variation], h_i_variations_ac_added[variation],
+                    R
+                )
+                mc_solutions_ac_added.append(final_var_dict)
+            except Exception as e:
+                print(f"Optimization failed for iteration {variation} with {planes_to_add} planes added: {e}")
+
+        if opt == "_runway":
+            try:
+                solution, final_var_dict = optimize_single_runway(
+                    P + planes_to_add, E_i_variations_ac_added[variation], T_i_variations_ac_added[variation],
+                    L_i_variations_ac_added[variation], S_ij_variations_ac_added[variation],
+                    g_i_variations_ac_added[variation], h_i_variations_ac_added[variation],
+                    str(data_number) + "_monte_carlo_" + str(variation)
+                )
+                mc_solutions_ac_added.append(final_var_dict)
             except Exception as e:
                 print(f"Optimization failed for iteration {variation} with {planes_to_add} planes added: {e}")
 
@@ -627,8 +794,8 @@ def plot_average_deviation(planes_to_add_list, all_mc_solutions_ac_added, all_T_
         mc_solutions_ac_added = all_mc_solutions_ac_added[P + planes_to_add]
         T_i_variations_ac_added = all_T_i_variations_ac_added[P + planes_to_add]
 
-        alpha_lists = [solution[P+planes_to_add:2*(P+planes_to_add)] for solution in mc_solutions_ac_added]
-        beta_lists = [solution[2*(P+planes_to_add):3*(P+planes_to_add)] for solution in mc_solutions_ac_added]
+        alpha_lists = [[alpha for alpha in sol_dict["alpha"].values()] for sol_dict in mc_solutions_ac_added]
+        beta_lists = [[beta for beta in sol_dict["beta"].values()] for sol_dict in mc_solutions_ac_added]
         avg_devs = []
 
         for variation, alpha_list in enumerate(alpha_lists):
@@ -647,7 +814,7 @@ def plot_average_deviation(planes_to_add_list, all_mc_solutions_ac_added, all_T_
         avg_devs_per_planes_added[planes_to_add] = avg_devs
 
     plt.figure(figsize=(12, 6))
-    plt.boxplot([avg_devs_per_planes_added[planes_to_add] for planes_to_add in planes_to_add_list], positions=planes_to_add_list, widths=2)
+    plt.boxplot([avg_devs_per_planes_added[P + planes_to_add] for planes_to_add in planes_to_add_list], positions=planes_to_add_list, widths=2)
     plt.title(f'Boxplot of Average Deviations per Number of Planes Added, {nr_mc_variations} Monte-Carlo Variations')
     plt.xticks(planes_to_add_list, [P + planes_to_add for planes_to_add in planes_to_add_list])
     plt.xlabel('Number of Planes')
