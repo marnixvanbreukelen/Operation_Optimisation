@@ -12,7 +12,7 @@ data_number = 5
 P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 # convert to int
 S_ij = [[int(s) for s in s_ij] for s_ij in S_ij]
-opt = "multi_runway" # or multi_runway # or heuristic
+opt = "multi_runway" # single_runway, multi_runway, or heuristic
 
 """Sensitivity"""
 if opt == "multi_runway":
@@ -696,12 +696,12 @@ all_g_i_variations_ac_added = {}
 all_h_i_variations_ac_added = {}
 
 # original variations
-all_E_i_variations_ac_added[1] = copy.deepcopy(E_i_variations)
-all_T_i_variations_ac_added[1] = copy.deepcopy(T_i_variations)
-all_L_i_variations_ac_added[1] = copy.deepcopy(L_i_variations)
-all_S_ij_variations_ac_added[1] = copy.deepcopy(S_ij_variations)
-all_g_i_variations_ac_added[1] = copy.deepcopy(g_i_variations)
-all_h_i_variations_ac_added[1] = copy.deepcopy(h_i_variations)
+all_E_i_variations_ac_added[P] = copy.deepcopy(E_i_variations)
+all_T_i_variations_ac_added[P] = copy.deepcopy(T_i_variations)
+all_L_i_variations_ac_added[P] = copy.deepcopy(L_i_variations)
+all_S_ij_variations_ac_added[P] = copy.deepcopy(S_ij_variations)
+all_g_i_variations_ac_added[P] = copy.deepcopy(g_i_variations)
+all_h_i_variations_ac_added[P] = copy.deepcopy(h_i_variations)
 
 planes_to_add_list = [5, 10, 15, 20]
 for planes_to_add in planes_to_add_list:
@@ -811,7 +811,7 @@ def plot_average_deviation(planes_to_add_list, all_mc_solutions_ac_added, all_T_
             avg_dev = total_dev / (P + planes_to_add)
             avg_devs.append(avg_dev)
 
-        avg_devs_per_planes_added[planes_to_add] = avg_devs
+        avg_devs_per_planes_added[P + planes_to_add] = avg_devs
 
     plt.figure(figsize=(12, 6))
     plt.boxplot([avg_devs_per_planes_added[P + planes_to_add] for planes_to_add in planes_to_add_list], positions=planes_to_add_list, widths=2)
