@@ -11,7 +11,7 @@ data_number = 5
 P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 # convert to int
 S_ij = [[int(s) for s in s_ij] for s_ij in S_ij]
-
+opt = "single_runway" # or multi_runway # or heuristic
 
 """Sensitivity"""
 # How many sensitivity steps 
@@ -299,10 +299,10 @@ def plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i):
     plt.show()
 
 """"PLOT ALL"""
-plot_preferred_ac_penalties()
-plot_varying_cost_panalties()
-plot_varied_separation_time()
-plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i)
+# plot_preferred_ac_penalties()
+# plot_varying_cost_panalties()
+# plot_varied_separation_time()
+# plot_varying_landing_times(E_i, T_i, L_i, P, S_ij, g_i, h_i)
 
 # Number of aircraft in a time window
 
@@ -337,7 +337,7 @@ def data_permutation(E_range, T_range, L_range, range_g, range_h, range_S,
 
     # go through every row for every plane
     for i in range(P):
-        E_i_adj[i] = E_i[i] + random.sample(E_range, 1)[0]
+        E_i_adj[i] = min(E_i[i] + random.sample(E_range, 1)[0], 0)
         T_i_adj[i] = E_i_adj[i] + random.sample(T_range, 1)[0]
         L_i_adj[i] = T_i_adj[i] + random.sample(L_range, 1)[0]
 
@@ -384,23 +384,23 @@ def run_monte_carlo_variations(nr_mc_variations):
             P, E_i, T_i, L_i, S_ij, g_i, h_i
         )
 
-        # Append monte-carlo variations
-        E_i_variations.append(E_i_adj)
-        T_i_variations.append(T_i_adj)
-        L_i_variations.append(L_i_adj)
-        S_ij_variations.append(S_ij_adj)
-        g_i_variations.append(g_i_adj)
-        h_i_variations.append(h_i_adj)
-
         # monte_carlo_runs
-        try:
-            solution = optimize_single_runway(
-                P, E_i_adj, T_i_adj, L_i_adj, S_ij_adj, g_i_adj, h_i_adj,
-                str(data_number) + "_monte_carlo_" + str(_)
-            )  # TODO let's not write results to file
-            mc_solutions.append(solution)
-        except Exception as e:
-            print(f"Optimization failed for iteration {_}: {e}")
+        if opt == "single_runway":
+            try:
+                solution = optimize_single_runway(
+                    P, E_i_adj, T_i_adj, L_i_adj, S_ij_adj, g_i_adj, h_i_adj,
+                    str(data_number) + "_monte_carlo_" + str(_)
+                )  # TODO let's not write results to file
+                mc_solutions.append(solution)
+                # append monte-carlo variations
+                E_i_variations.append(E_i_adj)
+                T_i_variations.append(T_i_adj)
+                L_i_variations.append(L_i_adj)
+                S_ij_variations.append(S_ij_adj)
+                g_i_variations.append(g_i_adj)
+                h_i_variations.append(h_i_adj)
+            except Exception as e:
+                print(f"Optimization failed for iteration {_}: {e}")
     return (mc_solutions,
            E_i_variations, T_i_variations, L_i_variations,
            S_ij_variations, g_i_variations, h_i_variations)
@@ -451,7 +451,7 @@ def add_planes(planes_to_add,
                P_var, E_i_var, T_i_var, L_i_var, S_ij_var, g_i_var, h_i_var):
     print(planes_to_add)
     for _ in range(planes_to_add):
-        #s select a random existing plane
+        # s select a random existing plane
         i = random.randint(0,P_var-1)
         # Parameters to be permuted:
         # E_i earliest landing time, cannot be before 0
@@ -605,16 +605,17 @@ for planes_to_add in planes_to_add_list:
     # optimisation with added planes
     mc_solutions_ac_added = []
     for variation in range(nr_mc_variations):
-        try:
-            solution = optimize_single_runway(
-                P + planes_to_add, E_i_variations_ac_added[variation], T_i_variations_ac_added[variation],
-                L_i_variations_ac_added[variation], S_ij_variations_ac_added[variation],
-                g_i_variations_ac_added[variation], h_i_variations_ac_added[variation],
-                str(data_number) + "_monte_carlo_" + str(variation)
-            )
-            mc_solutions_ac_added.append(solution)
-        except Exception as e:
-            print(f"Optimization failed for iteration {variation} with {planes_to_add} planes added: {e}")
+        if opt == "single_runway":
+            try:
+                solution = optimize_single_runway(
+                    P + planes_to_add, E_i_variations_ac_added[variation], T_i_variations_ac_added[variation],
+                    L_i_variations_ac_added[variation], S_ij_variations_ac_added[variation],
+                    g_i_variations_ac_added[variation], h_i_variations_ac_added[variation],
+                    str(data_number) + "_monte_carlo_" + str(variation)
+                )
+                mc_solutions_ac_added.append(solution)
+            except Exception as e:
+                print(f"Optimization failed for iteration {variation} with {planes_to_add} planes added: {e}")
 
     all_mc_solutions_ac_added[P + planes_to_add] = mc_solutions_ac_added
 
