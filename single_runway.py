@@ -35,6 +35,10 @@ def read_data(data_number):
     #number of planes
     P = int(number_of_planes)
 
+    #Appearance time
+    A_i = [el[0] for el in data]
+    # print(A_i)
+
     #earliest landing time
     E_i = [el[1] for el in data]
     # print(E_i)
@@ -59,7 +63,7 @@ def read_data(data_number):
     h_i = [el[5] for el in data]
     # print(h_i)
     print("Data loaded succesfully")
-    return P, E_i, T_i, L_i, S_ij, g_i, h_i
+    return P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i
 
 
 
@@ -95,9 +99,9 @@ def optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number):
                     U.append((i,j))
                 elif E_i[i] <= L_i[j] <= L_i[i]:
                     U.append((i,j))
-    print(U)
-    print(V)
-    print(W)
+    # print(U)
+    # print(V)
+    # print(W)
 
     ### Defining optimization model ###
     model = Model()
@@ -257,10 +261,16 @@ def optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number):
 
 #RUN MODEL
 ###SPECIFY DATA HERE###
-# data_number = 1
+# data_number = 3
+# # read data
+# P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+# print(optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number))
+
+
+data_number = 1
 # read data
-# P, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
 # print(optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i))
-# solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number)
-# print(solution, final_var_dict)
+solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number)
+print(solution, final_var_dict)
 ### Optional post-processing ###
