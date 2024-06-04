@@ -169,7 +169,7 @@ def optimize_multiple_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, R):
     model.setObjective(obj, GRB.MINIMIZE)
     model.update()
     # model.write(f'model{data_number}.lp')
-    model.setParam('TimeLimit', 1)
+    model.setParam('TimeLimit', 2)
 
     #OPTIMIZE MODEL
     model.optimize()

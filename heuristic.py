@@ -8,11 +8,8 @@ import matplotlib.pyplot as plt
 #1. sort planes on T in ascending order
 
 
-def heuristic(data_number,R):
-    P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
-
+def heuristic(P, E_i, T_i, L_i, S_ij, g_i, h_i,R):
     # make arrays for the sorting
-    A_i = np.array(A_i)
     E_i = np.array(E_i)
     T_i = np.array(T_i)
     L_i = np.array(L_i)
@@ -24,7 +21,6 @@ def heuristic(data_number,R):
     index = np.argsort(T_i)
 
     #sort all other data in the same way
-    A_i = A_i[index]
     E_i = E_i[index]
     T_i = T_i[index]
     L_i = L_i[index]
@@ -77,9 +73,12 @@ def heuristic(data_number,R):
     # calculate the solution if only this heuristic is used
     solu = (x_j - T_i)*h_i
 
-    return A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i, solu
-def optimize_multiple_runway_heuristic(A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i):
+    S_ij = [list(S_ij_list) for S_ij_list in S_ij]
 
+    return A, P, list(E_i), list(T_i), list(L_i), S_ij, list(g_i), list(h_i), solu
+
+
+def optimize_multiple_runway_heuristic(A, P, E_i, T_i, L_i, S_ij, g_i, h_i, R):
     #read data
     # P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
     s_ij = np.zeros((P,P)) #todo check if zeros is the way to approach:: the result is good
@@ -269,10 +268,13 @@ def optimize_multiple_runway_heuristic(A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i)
 
     model.setObjective(obj, GRB.MINIMIZE)
     model.update()
-    model.write(f'model{data_number}.lp')
+    model.setParam('TimeLimit', 3)
+
+    # model.write(f'model{data_number}.lp')
+
     #OPTIMIZE MODEL
     model.optimize()
-    model.write("testout.sol")
+    # model.write("testout.sol")
 
     # get solution: is a list of all decision variables ordered x, alpha, beta ,d. z, y
     solution = []
@@ -330,9 +332,9 @@ def optimize_multiple_runway_heuristic(A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i)
 
     return solution, final_var_dict
 
-data_number = 6
-R = 2
-A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i, solu = heuristic(data_number,R)
-print('the A matrix:',A)
-optimize_multiple_runway_heuristic(A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i)
-print(solu, sum(solu))
+# data_number = 6
+# R = 2
+# A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i, solu = heuristic(data_number,R)
+# print('the A matrix:',A)
+# optimize_multiple_runway_heuristic(A, P, E_i, T_i, L_i, S_ij, g_i, h_i)
+# print(solu, sum(solu))

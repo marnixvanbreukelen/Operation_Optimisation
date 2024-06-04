@@ -267,10 +267,10 @@ def optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number):
 # print(optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number))
 
 
-data_number = 1
-# read data
-P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
-# print(optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i))
-solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number)
-print(solution, final_var_dict)
-### Optional post-processing ###
+# data_number = 1
+# # read data
+# P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+# # print(optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i))
+# solution, final_var_dict = optimize_single_runway(P, E_i, T_i, L_i, S_ij, g_i, h_i, data_number)
+# print(solution, final_var_dict)
+# ### Optional post-processing ###
