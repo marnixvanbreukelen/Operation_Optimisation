@@ -61,9 +61,10 @@ def heuristic(P, E_i, T_i, L_i, S_ij, g_i, h_i,R):
             except ValueError:
                 max_A_u = 0
             # Compute B_r, the most critical landing time
-            B_r = max(T_i[j], max_A_r, max_A_u)
+            B_ir = max(T_i[j], max_A_r, max_A_u)
+            # print(f'j = {j} and r = {r}',T_i[j], max_A_r, max_A_u, B_ir)
             # save B_r to B
-            B.append(B_r)
+            B.append(B_ir)
         # ind is the runway on which the plane will land, because there it can land the earliest
         ind = B.index(min(B))
         # Save plane j to the proper row of the A matrix
@@ -334,7 +335,8 @@ def optimize_multiple_runway_heuristic(A, P, E_i, T_i, L_i, S_ij, g_i, h_i, R):
 
 # data_number = 6
 # R = 2
-# A, P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i, solu = heuristic(data_number,R)
+# P, A_i, E_i, T_i, L_i, S_ij, g_i, h_i = read_data(data_number)
+# A, P, E_i, T_i, L_i, S_ij, g_i, h_i, solu = heuristic(P, E_i, T_i, L_i, S_ij, g_i, h_i,R)
 # print('the A matrix:',A)
-# optimize_multiple_runway_heuristic(A, P, E_i, T_i, L_i, S_ij, g_i, h_i)
+# optimize_multiple_runway_heuristic(A, P, E_i, T_i, L_i, S_ij, g_i, h_i, R)
 # print(solu, sum(solu))
