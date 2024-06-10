@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import copy
 import numpy as np
-
+import sys
 
 # Loading Data for the rest of the analysis
 data_number = 5
@@ -23,6 +23,8 @@ if opt == "multi_runway":
 # heuristic_R1 or R2
 if opt == "heuristic":
     R = 1
+if opt == "heuristic_R2":
+    R = 2
 
 # How many sensitivity steps 
 sens_steps = 5
@@ -76,7 +78,7 @@ def plot_varied_separation_time(P, E_i_variations, T_i_variations, L_i_variation
                 solution, final_var_dict = optimize_multiple_runway(P, E_i, T_i, L_i, S_ij_sens, g_i, h_i, R)
                 solutions.append(final_var_dict)
 
-            if opt == "heuristic":
+            if opt == "heuristic" or opt =="heuristic_R2":
                 A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, solu = heuristic(P, E_i, T_i, L_i, S_ij_sens, g_i, h_i,R)
                 solution, final_var_dict  = optimize_multiple_runway_heuristic(A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, R)
                 solutions.append(final_var_dict)
@@ -184,7 +186,7 @@ def plot_varying_cost_panalties(P, E_i_variations, T_i_variations, L_i_variation
                                                                   )
                 solutions.append(final_var_dict)
 
-            if opt == "heuristic":
+            if opt == "heuristic" or opt =="heuristic_R2":
                 A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, solu = heuristic(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,R)
                 solution, final_var_dict  = optimize_multiple_runway_heuristic(A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, R)
                 solutions.append(final_var_dict)
@@ -236,7 +238,12 @@ def plot_varying_cost_panalties(P, E_i_variations, T_i_variations, L_i_variation
 
 ##### half the planes we give higher penalty and we see whether those have a lower deviation
 # Function to vary penalty costs for half the planes with a preference factor
-def vary_penalty_costs_half(g_i, h_i, set_cost_early, set_cost_late, pref_factor):
+def vary_penalty_costs_half(g_i, h_i, set_cost_early, set_cost_late, non_pref_reduce):
+    g_i_sens = [set_cost_early - non_pref_reduce if i % 2 == 0 else set_cost_early for i, g in enumerate(g_i)]
+    h_i_sens = [set_cost_late - non_pref_reduce if i % 2 == 0 else set_cost_late for i, h in enumerate(h_i)]
+    return g_i_sens, h_i_sens
+
+def vary_penalty_costs_half_factor(g_i, h_i, set_cost_early, set_cost_late, pref_factor):
     g_i_sens = [set_cost_early // pref_factor if i % 2 == 0 else set_cost_early for i, g in enumerate(g_i)]
     h_i_sens = [set_cost_late // pref_factor if i % 2 == 0 else set_cost_late for i, h in enumerate(h_i)]
     return g_i_sens, h_i_sens
@@ -258,8 +265,9 @@ def plot_preferred_ac_penalties(P, E_i_variations, T_i_variations, L_i_variation
         set_cost_early = max(g_i)
         set_cost_late = max(h_i)
         # run for various pref_factors
-        for pref_factor in range(1, sens_steps + 1):  # start from 1 to avoid division by zero
-            g_i_sens, h_i_sens = vary_penalty_costs_half(g_i, h_i, set_cost_early, set_cost_late, pref_factor)
+        non_pref_reduction_range = [0,5,10,15]
+        for non_pref_reduce in non_pref_reduction_range:  # start from 1 to avoid division by zero
+            g_i_sens, h_i_sens = vary_penalty_costs_half(g_i, h_i, set_cost_early, set_cost_late, non_pref_reduce)
             g_i_sens_list.append(g_i_sens)
             h_i_sens_list.append(h_i_sens)
 
@@ -280,7 +288,7 @@ def plot_preferred_ac_penalties(P, E_i_variations, T_i_variations, L_i_variation
                                                                   )
                 solutions.append(final_var_dict)
 
-            if opt == "heuristic":
+            if opt == "heuristic" or opt =="heuristic_R2":
                 A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, solu = heuristic(P, E_i, T_i, L_i, S_ij, g_i_sens, h_i_sens,R)
                 solution, final_var_dict  = optimize_multiple_runway_heuristic(A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, R)
                 solutions.append(final_var_dict)
@@ -314,18 +322,19 @@ def plot_preferred_ac_penalties(P, E_i_variations, T_i_variations, L_i_variation
             percentual_deviation_non_pref.append(percent_dev_non_pref)
         # structure of list is mc_variation, sensitivty steps, planes
 
-        for i in range(sens_steps):
+        for i in range(len(non_pref_reduction_range)):
             percentual_deviation_pref_list[i] += percentual_deviation_pref[i]
             percentual_deviation_non_pref_list[i] += percentual_deviation_non_pref[i]
 
 
     # Prepare data for seaborn
     data = []
-    for i in range(sens_steps):
+    for i in range(len(non_pref_reduction_range)):
+        perc_diff = round(100*non_pref_reduction_range[i]/set_cost_early,0)
         for deviation in percentual_deviation_pref_list[i]:
-            data.append({'Deviation': deviation, 'Group': f'Pref Cost {set_cost_early//range(1, sens_steps + 1)[i]} (F{i+1})'})
+            data.append({'Deviation': deviation, 'Group': f'Pref Cost {set_cost_early}, {perc_diff}(%) diff.'})
         for deviation in percentual_deviation_non_pref_list[i]:
-            data.append({'Deviation': deviation, 'Group': f'Non-Pref Cost {set_cost_early} (F{i+1})'})
+            data.append({'Deviation': deviation, 'Group': f'Non-Pref Cost {set_cost_early-non_pref_reduction_range[i]}, {perc_diff}(%) diff.'})
 
     df = pd.DataFrame(data)
 
@@ -340,15 +349,15 @@ def plot_preferred_ac_penalties(P, E_i_variations, T_i_variations, L_i_variation
     plt.grid(True)
     plt.tight_layout()  # Adjust layout to accommodate x-axis labels
     plt.savefig("sensitivity_plots/" + opt + "_pref_pen" + ".png")
-    # plt.show()
+    plt.show()
 
 
 
 
 #########  Landing times
-def vary_landing_times(E_i, L_i, dev_earlier, dev_later):
-    E_i_sens = [max(0, E - dev_earlier) for E in E_i] # ensuring we don't go below zero
-    L_i_sens = [L + dev_later for L in L_i]
+def vary_landing_times(E_i, L_i, T_i, dev_earlier, dev_later):
+    E_i_sens = [max(0, min(T_i[it], E + dev_earlier)) for it, E in enumerate(E_i)] # ensuring we don't go below zero
+    L_i_sens = [max(T_i[it], L - dev_later) for it, L in enumerate(L_i)]
     return E_i_sens, L_i_sens
 
 
@@ -361,7 +370,6 @@ def plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations
         E_i, T_i, L_i, S_ij, g_i, h_i = E_i_variations[variation],  T_i_variations[variation], \
                                         L_i_variations[variation],S_ij_variations[variation],\
                                         g_i_variations[variation],h_i_variations[variation]
-
 
 
         # Initialize lists to store sensitivity values
@@ -381,13 +389,18 @@ def plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations
         dev_earlier = max_dev_earliest / sens_steps
         dev_later = max_dev_latest / sens_steps
 
+        dev_list_early = [dev_earlier * it for it in range(sens_steps)] \
+                         + [0 for it in range(sens_steps)]
+        dev_list_late = [0 for it in range(sens_steps)] + \
+                        [dev_later * it for it in range(sens_steps)]
+
         print("deviations", max_dev_earliest, dev_earlier, max_dev_latest, dev_later)
 
         # Create a loop to vary landing times
-        for it in range(sens_steps):
-            E_i_sens, L_i_sens = vary_landing_times(E_i, L_i,
-                                                    max_dev_earliest - dev_earlier * it,
-                                                    dev_later * it)
+        for it in range(2*sens_steps):
+            E_i_sens, L_i_sens = vary_landing_times(E_i, L_i, T_i,
+                                                    dev_list_early[it],
+                                                    dev_list_late[it])
             E_i_sens_list.append(E_i_sens)
             L_i_sens_list.append(L_i_sens)
 
@@ -409,7 +422,7 @@ def plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations
                                                                     )
                 solutions.append(final_var_dict)
 
-            if opt == "heuristic":
+            if opt == "heuristic" or opt =="heuristic_R2":
                 A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, solu = heuristic(P, E_i_sens, T_i, L_i_sens, S_ij, g_i, h_i,R)
                 solution, final_var_dict  = optimize_multiple_runway_heuristic(A, P, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, R)
                 solutions.append(final_var_dict)
@@ -426,13 +439,13 @@ def plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations
         avg_beta_lists.append(avg_beta)
 
     # Calculating the average alpha for monte-carlo variations AND the sensitivity variations
-    avg_alphas = [0 for i in range(sens_steps)]
+    avg_alphas = [0 for i in range(2*sens_steps)]
     for avg_alpha_list in avg_alpha_lists:
         for i, alpha in enumerate(avg_alpha_list):
             avg_alphas[i] += alpha
     avg_alpha = [alpha_sum/nr_mc_variations for alpha_sum in avg_alphas]
 
-    avg_betas = [0 for i in range(sens_steps)]
+    avg_betas = [0 for i in range(2*sens_steps)]
     for avg_beta_list in avg_beta_lists:
         for i, beta in enumerate(avg_beta_list):
             avg_betas[i] += avg_beta_list[i]
@@ -440,8 +453,10 @@ def plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations
 
 
     # Define sensitivity steps and labels for plotting
-    sensitivity_steps = range(1, sens_steps + 1)
-    sensitivity_labels = [(-round(max_dev_earliest - dev_earlier * i, 2), round(dev_later * i, 2)) for i in range(sens_steps)]
+    sensitivity_steps = range(1, 2*sens_steps + 1)
+    # sensitivity_labels = [(-round(max_dev_earliest - dev_earlier * i, 2),
+    #                        round(dev_later * i, 2)) for i in range(sens_steps)]
+    sensitivity_labels = [(dev_list_early[it], dev_list_late[it]) for it in range(2*sens_steps)]
 
     # Plot the data
     plt.figure(figsize=(8, 4))
@@ -450,14 +465,14 @@ def plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations
 
     # Add titles and labels to the plot
     # plt.title(f'Average Alpha and Beta Values for Varying Landing Times), {nr_mc_variations} Monte-Carlo Variations')
-    plt.xlabel('Sensitivity Step (E_i, L_i)')
+    plt.xlabel('Delta Decrease (T_i-E_i, L_i-T_i)')
     plt.ylabel('Average Deviation (time)')
     plt.xticks(sensitivity_steps, sensitivity_labels, rotation=45, ha='right')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()  # Adjust layout to accommodate x-axis labels
-    # plt.show()
     plt.savefig("sensitivity_plots/" + opt + "_land_times" + ".png")
+    plt.show()
 
 
 """"PLOT ALL"""
@@ -587,7 +602,7 @@ def run_monte_carlo_variations(P, R, nr_mc_variations,
             except Exception as e:
                 print(f"Optimization failed for iteration {_}: {e}")
 
-        if opt == "heuristic":
+        if opt == "heuristic" or opt =="heuristic_R2":
             try:
                 # TODO A_i is not needed so can skip that (don't need to do a monte-carlo for that),
                 #  in addition don't forget I should append the values coming out of heuristic and not the _adj ones
@@ -658,26 +673,28 @@ S_ij_variations, g_i_variations, h_i_variations = run_monte_carlo_variations(P, 
                                range_h,
                                range_S)
 
-plot_mc_solutions(mc_solutions, T_i_variations)
-
-"""Plotting Sensitivity"""
-plot_varied_separation_time(P, E_i_variations, T_i_variations, L_i_variations,
-                                S_ij_variations, g_i_variations, h_i_variations)
-
-plot_varying_cost_panalties(P, E_i_variations, T_i_variations, L_i_variations,
-                                S_ij_variations, g_i_variations, h_i_variations)
+# plot_mc_solutions(mc_solutions, T_i_variations)
+#
+# """Plotting Sensitivity"""
+# plot_varied_separation_time(P, E_i_variations, T_i_variations, L_i_variations,
+#                                 S_ij_variations, g_i_variations, h_i_variations)
+#
+# plot_varying_cost_panalties(P, E_i_variations, T_i_variations, L_i_variations,
+#                                 S_ij_variations, g_i_variations, h_i_variations)
+#
 
 plot_preferred_ac_penalties(P, E_i_variations, T_i_variations, L_i_variations,
            S_ij_variations, g_i_variations, h_i_variations)
+sys.exit()
+# plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations,
+#            S_ij_variations, g_i_variations, h_i_variations)
 
-plot_varying_landing_times(P, E_i_variations, T_i_variations, L_i_variations,
-           S_ij_variations, g_i_variations, h_i_variations)
 
 """Multiple Runways Changing number of runways"""
 # Can play with this
 runway_list = [1, 2, 3, 4]
 all_mc_solutions_runways = {}
-if opt == "heuristic":
+if opt == "heuristic" or opt =="heuristic_R2":
     all_E_i_variations_runways = {}
     all_E_i_variations_runways = {}
     all_T_i_variations_runways = {}
@@ -689,7 +706,7 @@ if opt == "heuristic":
 for nr_runways in runway_list:
     # optimisation with added runways
     mc_solutions_runways = []
-    if opt == "heuristic":
+    if opt == "heuristic" or opt =="heuristic_R2":
         E_i_variations_runways_h = []
         T_i_variations_runways_h = []
         L_i_variations_runways_h = []
@@ -722,7 +739,7 @@ for nr_runways in runway_list:
             except Exception as e:
                 print(f"Optimization failed for iteration {variation} with {nr_runways} planes added: {e}")
 
-        if opt == "heuristic":
+        if opt == "heuristic" or opt =="heuristic_R2":
             try:
                 # TODO A_i is not needed so can skip that (don't need to do a monte-carlo for that),
                 #  in addition don't forget I should append the values coming out of heuristic and not the _adj ones
@@ -749,7 +766,7 @@ for nr_runways in runway_list:
             except Exception as e:
                 print(f"Optimization failed for iteration {variation} with {nr_runways} planes added: {e}")
 
-    if opt == "heuristic":
+    if opt == "heuristic" or opt =="heuristic_R2":
         all_E_i_variations_runways[nr_runways] = E_i_variations_runways_h
         all_T_i_variations_runways[nr_runways] = T_i_variations_runways_h
         all_L_i_variations_runways[nr_runways] = L_i_variations_runways_h
@@ -766,7 +783,7 @@ def plot_average_deviation_runways(runway_list, all_mc_solutions_runways, T_i_va
         T_i_variation = T_i_variations
 
     for runway in runway_list:
-        if opt == "heuristic":
+        if opt == "heuristic" or opt =="heuristic_R2":
             T_i_variation = T_i_variations[runway]
         mc_solutions_runways = all_mc_solutions_runways[runway]
 
@@ -803,13 +820,13 @@ def plot_average_deviation_runways(runway_list, all_mc_solutions_runways, T_i_va
 if opt == "multi_runway":
     plot_average_deviation_runways(runway_list, all_mc_solutions_runways, T_i_variations, P)
 
-if opt == "heuristic":
+if opt == "heuristic" or opt =="heuristic_R2":
     plot_average_deviation_runways(runway_list, all_mc_solutions_runways, all_T_i_variations_runways, P)
 
 
 """Adding rows of planes"""
 # Can play with this
-if opt in ["multi_runway", "heuristic"]:
+if opt in ["multi_runway", "heuristic_R2"]:
     R = 2
     mc_solutions, E_i_variations, T_i_variations, L_i_variations, \
     S_ij_variations, g_i_variations, h_i_variations = run_monte_carlo_variations(P, R, nr_mc_variations,
@@ -982,7 +999,7 @@ for planes_to_add in planes_to_add_list:
     # optimisation with added planes
     mc_solutions_ac_added = []
     # Empty lists for heuristic
-    if opt == "heuristic":
+    if opt == "heuristic" or opt =="heuristic_R2":
         E_i_variations_ac_added_h = []
         T_i_variations_ac_added_h = []
         L_i_variations_ac_added_h = []
@@ -1015,7 +1032,7 @@ for planes_to_add in planes_to_add_list:
             except Exception as e:
                 print(f"Optimization failed for iteration {variation} with {planes_to_add} planes added: {e}")
 
-        if opt == "heuristic":
+        if opt == "heuristic" or opt =="heuristic_R2":
             try:
                 A, P_heur, E_i_h, T_i_h, L_i_h, S_ij_h, g_i_h, h_i_h, solu = heuristic(P+planes_to_add,
                                                                                          E_i_variations_ac_added[variation],
@@ -1049,7 +1066,7 @@ for planes_to_add in planes_to_add_list:
         all_g_i_variations_ac_added[P + planes_to_add] = g_i_variations_ac_added
         all_h_i_variations_ac_added[P + planes_to_add] = h_i_variations_ac_added
 
-    if opt == "heuristic":
+    if opt == "heuristic" or opt =="heuristic_R2":
         all_E_i_variations_ac_added[P + planes_to_add] = E_i_variations_ac_added_h
         all_T_i_variations_ac_added[P + planes_to_add] = T_i_variations_ac_added_h
         all_L_i_variations_ac_added[P + planes_to_add] = L_i_variations_ac_added_h
